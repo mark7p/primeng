@@ -1153,6 +1153,7 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
     }
 
     insert(event: Event, text: string, sign = { isDecimalSign: false, isMinusSign: false }) {
+        console.table(sign);
         const minusCharIndexOnText = text.search(this._minusSign);
         this._minusSign.lastIndex = 0;
         if (!this.allowMinusSign() && minusCharIndexOnText !== -1) {
@@ -1164,6 +1165,7 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
         let inputValue = this.input?.nativeElement.value.trim();
         const { decimalCharIndex, minusCharIndex, suffixCharIndex, currencyCharIndex } = this.getCharIndexes(inputValue);
         let newValueStr;
+        const operation = selectionStart !== selectionEnd ? 'range-insert' : 'insert';
 
         if (sign.isMinusSign) {
             if (selectionStart === 0) {
@@ -1175,7 +1177,17 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
                 this.updateValue(event, newValueStr, text, 'insert');
             }
         } else if (sign.isDecimalSign) {
-            if (decimalCharIndex > 0 && selectionStart === decimalCharIndex) {
+            if (!!this.minFractionDigits || this.mode === 'currency') {
+                const isStartWithDecimal = decimalCharIndex === -1 && selectionStart === 0;
+                const rangeWithDecimal = operation === 'range-insert' && selectionStart <= decimalCharIndex && selectionEnd >= decimalCharIndex;
+                if (isStartWithDecimal || rangeWithDecimal) {
+                    console.log('stage 1');
+                    this.updateValue(event, '0.' + inputValue, '0.', operation);
+                }
+                // console.table({ isStartWithDecimal, rangeWithDecimal });
+                // this.updateValue(event, '0.' + inputValue, '0.', 'insert');
+                // console.log('text:', text);
+            } else if (decimalCharIndex > 0 && selectionStart === decimalCharIndex) {
                 this.updateValue(event, inputValue, text, 'insert');
             } else if (decimalCharIndex > selectionStart && decimalCharIndex < selectionEnd) {
                 newValueStr = this.insertText(inputValue, text, selectionStart, selectionEnd);
@@ -1186,7 +1198,6 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
             }
         } else {
             const maxFractionDigits = this.numberFormat.resolvedOptions().maximumFractionDigits;
-            const operation = selectionStart !== selectionEnd ? 'range-insert' : 'insert';
 
             if (decimalCharIndex > 0 && selectionStart > decimalCharIndex) {
                 if (selectionStart + text.length - (decimalCharIndex + 1) <= maxFractionDigits) {
@@ -1369,16 +1380,19 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
         let newValue = this.formatValue(value);
         let currentLength = inputValue.length;
 
+        console.table({ value, newValue });
         if (newValue !== valueStr) {
             newValue = this.concatValues(newValue, valueStr as string);
         }
 
         if (currentLength === 0) {
             this.input.nativeElement.value = newValue;
-            this.input.nativeElement.setSelectionRange(0, 0);
-            const index = this.initCursor();
-            const selectionEnd = index + insertedValueStr.length;
-            this.input.nativeElement.setSelectionRange(selectionEnd, selectionEnd);
+            // this.input.nativeElement.setSelectionRange(0, 0);
+            const selectionEnd = insertedValueStr.length;
+            // console.table({ selectionEnd, value: this.formatValue(value), insertedValueStr, valueStr, newValue });
+            setTimeout(() => {
+                this.input.nativeElement.setSelectionRange(selectionEnd + 1, selectionEnd + 1);
+            });
         } else {
             let selectionStart = this.input.nativeElement.selectionStart;
             let selectionEnd = this.input.nativeElement.selectionEnd;
