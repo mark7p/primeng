@@ -1179,10 +1179,13 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
             if (!!this.minFractionDigits || this.mode === 'currency') {
                 const isStartWithDecimal = decimalCharIndex === -1 && selectionStart === 0;
                 const rangeWithDecimal = operation === 'range-insert' && selectionStart <= decimalCharIndex && selectionEnd >= decimalCharIndex;
+                const followDecimalFormat = decimalCharIndex === selectionStart;
                 if (rangeWithDecimal) {
                     this.updateValue(event, '0.', '0.', 'range-insert');
                 } else if (isStartWithDecimal) {
                     this.updateValue(event, '0.' + inputValue, '0.', 'insert');
+                } else if (followDecimalFormat) {
+                    this.updateValue(event, inputValue, text, 'insert');
                 }
             } else if (decimalCharIndex > 0 && selectionStart === decimalCharIndex) {
                 this.updateValue(event, inputValue, text, 'insert');
