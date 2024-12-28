@@ -1153,7 +1153,6 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
     }
 
     insert(event: Event, text: string, sign = { isDecimalSign: false, isMinusSign: false }) {
-        console.table(sign);
         const minusCharIndexOnText = text.search(this._minusSign);
         this._minusSign.lastIndex = 0;
         if (!this.allowMinusSign() && minusCharIndexOnText !== -1) {
@@ -1180,13 +1179,11 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
             if (!!this.minFractionDigits || this.mode === 'currency') {
                 const isStartWithDecimal = decimalCharIndex === -1 && selectionStart === 0;
                 const rangeWithDecimal = operation === 'range-insert' && selectionStart <= decimalCharIndex && selectionEnd >= decimalCharIndex;
-                if (isStartWithDecimal || rangeWithDecimal) {
-                    console.log('stage 1');
-                    this.updateValue(event, '0.' + inputValue, '0.', operation);
+                if (rangeWithDecimal) {
+                    this.updateValue(event, '0.', '0.', 'range-insert');
+                } else if (isStartWithDecimal) {
+                    this.updateValue(event, '0.' + inputValue, '0.', 'insert');
                 }
-                // console.table({ isStartWithDecimal, rangeWithDecimal });
-                // this.updateValue(event, '0.' + inputValue, '0.', 'insert');
-                // console.log('text:', text);
             } else if (decimalCharIndex > 0 && selectionStart === decimalCharIndex) {
                 this.updateValue(event, inputValue, text, 'insert');
             } else if (decimalCharIndex > selectionStart && decimalCharIndex < selectionEnd) {
@@ -1380,16 +1377,13 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
         let newValue = this.formatValue(value);
         let currentLength = inputValue.length;
 
-        console.table({ value, newValue });
         if (newValue !== valueStr) {
             newValue = this.concatValues(newValue, valueStr as string);
         }
 
         if (currentLength === 0) {
             this.input.nativeElement.value = newValue;
-            // this.input.nativeElement.setSelectionRange(0, 0);
             const selectionEnd = insertedValueStr.length;
-            // console.table({ selectionEnd, value: this.formatValue(value), insertedValueStr, valueStr, newValue });
             setTimeout(() => {
                 this.input.nativeElement.setSelectionRange(selectionEnd + 1, selectionEnd + 1);
             });
@@ -1422,7 +1416,9 @@ export class InputNumber extends BaseComponent implements OnInit, AfterContentIn
                 tRegex.test(newValue.slice(sRegex.lastIndex));
 
                 selectionEnd = sRegex.lastIndex + tRegex.lastIndex;
-                this.input.nativeElement.setSelectionRange(selectionEnd, selectionEnd);
+                setTimeout(() => {
+                    this.input.nativeElement.setSelectionRange(selectionEnd, selectionEnd);
+                });
             } else if (newLength === currentLength) {
                 if (operation === 'insert' || operation === 'delete-back-single') this.input.nativeElement.setSelectionRange(selectionEnd + 1, selectionEnd + 1);
                 else if (operation === 'delete-single') this.input.nativeElement.setSelectionRange(selectionEnd - 1, selectionEnd - 1);
